@@ -1,0 +1,9 @@
+# Default owner for everything in the repo.
+*                              @maljefairi
+
+# Cryptographic core + wire-format surface routes for owner review.
+/app/main.py                   @maljefairi
+/frontend/src/crypto.ts        @maljefairi
+/.repobility/                  @maljefairi
+/SECURITY.md                   @maljefairi
+/tests/                        @maljefairi
