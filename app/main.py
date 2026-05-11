@@ -6,17 +6,21 @@ AES-GCM key is generated in the browser and travels in the URL fragment
 (#k=...), which browsers never send in HTTP requests. The server cannot
 decrypt a file even with full access to its own disk and logs.
 """
+
 import base64
+import logging
 import os
 import secrets
 import sqlite3
 import time
+from binascii import Error as BinasciiError
 from pathlib import Path
-from typing import Optional
 
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
+
+log = logging.getLogger("vanishdrop")
 
 # ----- config -----
 PORT = int(os.environ.get("PORT", "8000"))
@@ -38,8 +42,7 @@ BLOBS_DIR.mkdir(parents=True, exist_ok=True)
 def db() -> sqlite3.Connection:
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
-    conn.execute(
-        """
+    conn.execute("""
         CREATE TABLE IF NOT EXISTS files (
             id TEXT PRIMARY KEY,
             filename TEXT NOT NULL,
@@ -49,8 +52,7 @@ def db() -> sqlite3.Connection:
             downloads_remaining INTEGER NOT NULL,
             created_at INTEGER NOT NULL
         )
-        """
-    )
+        """)
     return conn
 
 
@@ -69,6 +71,29 @@ def blob_path(id_: str) -> Path:
 app = FastAPI(title="VanishDrop", description="Encrypted one-time file sharing.")
 
 
+@app.middleware("http")
+async def security_headers(request: Request, call_next):
+    """Strict security headers on every response.
+
+    - Content-Security-Policy locks the page down to same-origin scripts
+      and styles (no third-party origins, no inline JS).
+    - Referrer-Policy 'no-referrer' prevents the URL fragment from
+      leaking via the Referer header when the viewer page links out.
+    - X-Frame-Options + frame-ancestors block embedding.
+    """
+    response = await call_next(request)
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'self'; img-src 'self' data:; "
+        "script-src 'self'; style-src 'self' 'unsafe-inline'; "
+        "connect-src 'self'; base-uri 'self'; "
+        "form-action 'none'; frame-ancestors 'none'"
+    )
+    response.headers["Referrer-Policy"] = "no-referrer"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    return response
+
+
 @app.get("/healthz")
 def healthz():
     with db() as conn:
@@ -78,7 +103,6 @@ def healthz():
 
 @app.post("/api/files")
 async def upload(
-    request: Request,
     blob: UploadFile = File(...),
     iv: str = Form(...),
     filename: str = Form(...),
@@ -92,8 +116,8 @@ async def upload(
     # IV is base64 of a 12-byte AES-GCM nonce.
     try:
         iv_bytes = base64.b64decode(iv, validate=True)
-    except Exception:
-        raise HTTPException(status_code=400, detail="invalid_iv")
+    except (BinasciiError, ValueError) as exc:
+        raise HTTPException(status_code=400, detail="invalid_iv") from exc
     if len(iv_bytes) != 12:
         raise HTTPException(status_code=400, detail="invalid_iv")
 
@@ -118,10 +142,10 @@ async def upload(
                 f.write(chunk)
     except HTTPException:
         raise
-    except Exception as exc:
-        print(f"upload error: {exc}")
+    except OSError as exc:
+        log.warning("upload write failed: %s", exc)
         out_path.unlink(missing_ok=True)
-        raise HTTPException(status_code=500, detail="upload_failed")
+        raise HTTPException(status_code=500, detail="upload_failed") from exc
 
     now = int(time.time())
     with db() as conn:
@@ -131,7 +155,8 @@ async def upload(
         )
         conn.commit()
 
-    print(f"stored file {id_} size={total}b ttl={ttl}s downloads={downloads}")
+    # Deliberately NOT logging the id — even debug logs would leak the
+    # server half of the capability URL.
     return {
         "id": id_,
         "expires_at": now + ttl,
@@ -191,8 +216,8 @@ def download(file_id: str):
     if remaining <= 0:
         try:
             path.unlink()
-        except Exception:
-            pass
+        except OSError as exc:
+            log.warning("unlink failed for %s: %s", file_id, exc)
 
     headers = {
         "X-VanishDrop-IV": row["iv"],
@@ -210,8 +235,8 @@ def _purge(file_id: str) -> None:
     p = blob_path(file_id)
     try:
         p.unlink()
-    except Exception:
-        pass
+    except OSError as exc:
+        log.warning("purge unlink failed for %s: %s", file_id, exc)
 
 
 def _valid_id(s: str) -> bool:
