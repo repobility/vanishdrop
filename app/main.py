@@ -68,7 +68,18 @@ def blob_path(id_: str) -> Path:
 
 
 # ----- app -----
-app = FastAPI(title="VanishDrop", description="Encrypted one-time file sharing.")
+# Disable FastAPI's interactive docs (/docs, /redoc, /openapi.json).
+# VanishDrop is a privacy-focused tool — leaking the schema gives no
+# benefit to legitimate users and reveals internal route shape to
+# scanners and casual visitors. Repobility's [AUC012] rule flags this
+# by default; setting these URLs to None opts out cleanly.
+app = FastAPI(
+    title="VanishDrop",
+    description="Encrypted one-time file sharing.",
+    docs_url=None,
+    redoc_url=None,
+    openapi_url=None,
+)
 
 
 @app.middleware("http")

@@ -167,3 +167,12 @@ def test_viewer_route_returns_html(app_client):
     client, _ = app_client
     r = client.get("/d/aaaaaaaaaaaaaaaaaaaaaa")
     assert r.status_code in (200, 503)
+
+
+def test_fastapi_docs_endpoints_are_disabled(app_client):
+    """Repobility [AUC012]: FastAPI exposes /docs, /redoc, /openapi.json
+    by default. VanishDrop opts out — these routes must 404."""
+    client, _ = app_client
+    for path in ("/docs", "/redoc", "/openapi.json"):
+        r = client.get(path)
+        assert r.status_code == 404, f"{path} returned {r.status_code}, expected 404"
