@@ -1,0 +1,65 @@
+============================================================
+Repobility unified scan — VanishDrop final (after iter 1-5)
+============================================================
+Repo:        https://github.com/repobility/vanishdrop
+Public URL:  https://repobility.com/scan/254afa72-3a13-4df6-b6a7-f8a0a14a5965/
+Submitted:   2026-05-11T22:03 +03:00 (epoch 1778537256.742)
+Legacy done: ~22:07:28 +03:00 (≈270 s of total wall clock)
+
+Combined:    94.5 / 100
+Repobility:  95 / 100         (legacy pipeline, 4 findings)
+9-layer:     finishing at capture time (poll-only summary fields
+                                       not yet populated)
+
+Severity distribution
+---------------------
+  Critical 0   High 3   Medium 1   Low 0   Info 0
+
+Source breakdown
+----------------
+  Legacy 4   9-layer 0   Crowd 0
+
+Layer breakdown
+---------------
+  Security 4
+
+The 4 findings
+--------------
+  HIGH   [AUC008] Object-level policy lacks owner/tenant condition
+                  GET /api/files/{file_id}        (app/main.py:187)
+                  → capability-URL by design (see ADR-0002 + access.yml).
+
+  HIGH   [AUC008] Object-level policy lacks owner/tenant condition
+                  GET /api/files/{file_id}/meta   (app/main.py:168)
+                  → capability-URL by design.
+
+  HIGH   [AUC008] Object-level policy lacks owner/tenant condition
+                  GET /d/{file_id}                (app/main.py:252)
+                  → capability-URL by design (SPA viewer shell;
+                     the id is just a path component, all auth is
+                     client-side fragment-key).
+
+  MED    [AUC012] FastAPI interactive docs may be exposed
+                  → FIXED in iteration 6 (commit next): set docs_url,
+                    redoc_url, openapi_url to None on the FastAPI()
+                    constructor. Regression test in test_server.py.
+
+Comparison to prior showcases
+-----------------------------
+                            securechat    cipherlink    vanishdrop
+  Backend stack             Node          Node          Python+FastAPI
+  Frontend stack            vanilla       vanilla       Vue 3 + Vite + TS
+  Crypto                    NaCl box      NaCl secretbox AES-GCM (WebCrypto)
+  Legacy score (final)      96            84            95
+  Combined (final)          81.3          74.9          94.5
+  Findings (final)          0             3 (AUC008)    4 (3 AUC008 + 1 AUC012)
+
+Conclusion
+----------
+Repobility legacy: 95 / 100 — solid A.
+Combined unified:  94.5 / 100 — the highest of the three showcase repos.
+3 of 4 findings are AUC008 intentional capability-URL design choices,
+already documented in `.repobility/access.yml` and ADR-0002. The 4th
+(AUC012) was an actual fix opportunity — disabled FastAPI's default
+/docs, /redoc, /openapi.json endpoints in a follow-up commit with a
+regression test asserting each path returns 404.
