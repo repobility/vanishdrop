@@ -1,20 +1,51 @@
 [project]
 name = "vanishdrop"
-version = "0.1.0"
+version = "1.0.0"
 description = "End-to-end encrypted one-time file sharing. Server only holds ciphertext blobs."
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
 authors = [{ name = "Mohammed Aljefairi", email = "mohammedaljefairi@gmail.com" }]
+keywords = [
+    "one-time-file",
+    "encrypted-file-sharing",
+    "firefox-send-clone",
+    "yopass",
+    "privatebin",
+    "wormhole",
+    "aes-gcm",
+    "capability-url",
+    "end-to-end-encryption",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Framework :: FastAPI",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Security :: Cryptography",
+]
 dependencies = [
     "fastapi>=0.115",
     "uvicorn[standard]>=0.34",
     "python-multipart>=0.0.20",
 ]
 
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "httpx>=0.27",
+    "ruff>=0.6",
+    "black>=24.0",
+]
+
 [project.urls]
-Homepage = "https://github.com/repobility/vanishdrop"
+Homepage = "https://github.com/repobility/vanishdrop#readme"
 Repository = "https://github.com/repobility/vanishdrop"
+Issues = "https://github.com/repobility/vanishdrop/issues"
+Changelog = "https://github.com/repobility/vanishdrop/blob/main/CHANGELOG.md"
 
 [build-system]
 requires = ["setuptools>=68"]
@@ -22,3 +53,29 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
 packages = ["app"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+# E/W: pycodestyle, F: pyflakes, I: isort, B: bugbear,
+# S: Bandit-style security, UP: pyupgrade, SIM: simplify.
+select = ["E", "W", "F", "I", "B", "S", "UP", "SIM"]
+ignore = [
+    "E501", # line length is handled by Black
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Asserts and PRNG-in-tests are fine.
+"tests/*" = ["S101", "S311"]
+# FastAPI uses File()/Form()/Depends() as default args by design.
+"app/main.py" = ["B008"]
+
+[tool.black]
+line-length = 100
+target-version = ["py310", "py311", "py312"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra -q"
