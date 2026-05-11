@@ -1,0 +1,26 @@
+/* TEAM */
+
+  Lead developer: Mohammed Aljefairi
+  Site:           https://github.com/repobility
+  Location:       —
+
+  AI pair-programming: Claude (Anthropic), via Claude Code
+
+/* SITE */
+
+  Last update:  2026/05/12
+  Backend:      Python 3.10+, FastAPI, uvicorn, SQLite
+  Frontend:     Vue 3, Vite, TypeScript
+  Cryptography: Web Crypto API — AES-GCM (256-bit key, 96-bit IV)
+  Software:     Node.js 20+, Python 3.10+, any modern browser
+
+/* THANKS */
+
+  Prior art in encrypted file-sharing:
+    - Firefox Send (sunset 2020) — pioneered the URL-fragment-key UX.
+    - wormhole.app — modern reimagining with magic-wormhole semantics.
+    - Send (timvisee/send) — community fork of Firefox Send.
+    - Yetishare — long-standing PHP file-sharing software.
+
+  Daniel J. Bernstein's salsa20 + Poly1305 work, even though we used
+  AES-GCM here — same authenticated-encryption discipline.

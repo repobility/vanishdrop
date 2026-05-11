@@ -1,0 +1,47 @@
+# VanishDrop
+
+> An end-to-end encrypted one-time file-sharing service. The browser
+> generates a 256-bit AES-GCM key, encrypts the file locally, uploads
+> only the ciphertext, and embeds the key in the URL fragment so the
+> server never sees it.
+
+VanishDrop is a small, auditable demonstration of how to build an
+encrypted file-drop tool where the server is honest-but-curious.
+
+## Design in one sentence
+
+A 32-byte AES-GCM key + 12-byte IV are generated client-side, the file
+is encrypted with the Web Crypto API, only the ciphertext + IV + name
++ TTL is POSTed to the server, and the key travels in the URL fragment
+(`#k=…`) which browsers never send in HTTP.
+
+## Documentation
+
+- [README.md](README.md): Quickstart, API surface, trust model.
+- [SECURITY.md](SECURITY.md): Full threat model and intentional non-goals.
+- [ARCHITECTURE.md](ARCHITECTURE.md): Module-by-module reference.
+- [.repobility/access.yml](.repobility/access.yml): Endpoint-by-endpoint
+  authorization matrix.
+- [docs/adr/](docs/adr/): Architecture Decision Records.
+
+## Source files
+
+- `app/main.py`: FastAPI app — upload, peek, atomic download, SPA shell.
+- `frontend/src/crypto.ts`: Web Crypto API wrapper — AES-GCM keygen,
+  encrypt, decrypt, base64url helpers.
+- `frontend/src/App.vue`: Top-level Vue 3 component, routes by URL path.
+- `frontend/src/components/Compose.vue`: drag-drop encrypt + upload.
+- `frontend/src/components/Viewer.vue`: peek + confirm + decrypt + save.
+- `tests/`: pytest suite — server validation, one-time-download,
+  capability-URL authorization invariants.
+
+## How to run
+
+    python3 -m venv .venv && source .venv/bin/activate
+    pip install -r requirements.txt
+    (cd frontend && npm install && npm run build)
+    uvicorn app.main:app --host 127.0.0.1 --port 8000
+
+## License
+
+MIT

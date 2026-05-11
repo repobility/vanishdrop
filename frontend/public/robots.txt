@@ -1,0 +1,14 @@
+# VanishDrop — robots policy.
+#
+# This is an interactive single-page app for one-time file sharing, not a
+# content site. There's nothing for crawlers to index — every file is keyed
+# by an unguessable id and only retrievable with the matching URL fragment.
+
+User-agent: *
+Disallow: /api/
+Disallow: /d/
+Disallow: /healthz
+
+Allow: /$
+
+Sitemap: /sitemap.xml
